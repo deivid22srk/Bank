@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Banco Seguro</string>
+    <string name="welcome">Bem-vindo ao Banco Seguro</string>
+    <string name="username">Nome de usuário</string>
+    <string name="password">Senha</string>
+    <string name="login">Entrar</string>
+    <string name="register">Criar Conta</string>
+    <string name="balance">Saldo</string>
+    <string name="transfer">Transferir</string>
+    <string name="history">Histórico</string>
+    <string name="logout">Sair</string>
+    <string name="recipient">Destinatário</string>
+    <string name="amount">Valor</string>
+    <string name="confirm">Confirmar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="currency_symbol">R$</string>
+</resources>
