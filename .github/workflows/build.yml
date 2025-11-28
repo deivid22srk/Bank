@@ -2,9 +2,9 @@ name: Android CI
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main", "master", "develop" ]
   pull_request:
-    branches: [ "main", "master" ]
+    branches: [ "main", "master", "develop" ]
   workflow_dispatch:
 
 jobs:
@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Repository
+    - name: Checkout the Repository
       uses: actions/checkout@v4
 
     - name: Set up JDK 17
@@ -22,39 +22,27 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    - name: Install Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        profile: minimal
-        override: true
-
-    - name: Add Android Rust Targets
-      run: |
-        rustup target add aarch64-linux-android armv7-linux-androideabi x86_64-linux-android i686-linux-android
-
-    - name: Setup Android NDK
-      uses: nttld/setup-ndk@v1
-      with:
-        ndk-version: r25c
-        add-to-path: true
-
-    - name: Build Rust Native Library
-      run: |
-        cd app/src/main/rust
-        export ANDROID_NDK_HOME=${{ steps.setup-ndk.outputs.ndk-path }}
-        export PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH
-        chmod +x build.sh
-        ./build.sh
-
-    - name: Grant Execute Permission for gradlew
+    - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
     - name: Build with Gradle
-      run: ./gradlew assembleDebug
+      run: ./gradlew assembleDebug --stacktrace
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: BancoSeguro-Debug-APK
+        name: BancoApp-Debug-APK
         path: ./app/build/outputs/apk/debug/app-debug.apk
+        retention-days: 30
+
+    - name: Build Release APK
+      run: ./gradlew assembleRelease --stacktrace
+      continue-on-error: true
+
+    - name: Upload Release APK
+      uses: actions/upload-artifact@v4
+      if: success()
+      with:
+        name: BancoApp-Release-APK
+        path: ./app/build/outputs/apk/release/app-release-unsigned.apk
+        retention-days: 30
