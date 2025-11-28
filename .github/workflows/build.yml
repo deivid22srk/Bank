@@ -42,11 +42,10 @@ jobs:
     - name: Build Rust Native Library
       run: |
         cd app/src/main/rust
-        export ANDROID_NDK_HOME=$ANDROID_NDK
+        export ANDROID_NDK_HOME=${{ steps.setup-ndk.outputs.ndk-path }}
+        export PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH
         chmod +x build.sh
         ./build.sh
-      env:
-        ANDROID_NDK: ${{ steps.setup-ndk.outputs.ndk-path }}
 
     - name: Grant Execute Permission for gradlew
       run: chmod +x gradlew

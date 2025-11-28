@@ -1,17 +1,16 @@
 use jni::JNIEnv;
 use jni::objects::{JClass, JString, JByteArray};
-use jni::sys::{jstring, jbyteArray};
+use jni::sys::jbyteArray;
 use aes_gcm::{
-    aead::{Aead, KeyInit, OsRng},
+    aead::{Aead, KeyInit},
     Aes256Gcm, Nonce,
 };
-use chacha20poly1305::{ChaCha20Poly1305, Key};
 use sha2::{Sha256, Digest};
 use rand::RngCore;
 
 #[no_mangle]
 pub extern "C" fn Java_com_bancoseguro_app_security_NativeCrypto_encryptData(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _class: JClass,
     data: JByteArray,
     key: JByteArray,
@@ -55,7 +54,7 @@ pub extern "C" fn Java_com_bancoseguro_app_security_NativeCrypto_encryptData(
 
 #[no_mangle]
 pub extern "C" fn Java_com_bancoseguro_app_security_NativeCrypto_decryptData(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _class: JClass,
     encrypted_data: JByteArray,
     key: JByteArray,
@@ -130,7 +129,7 @@ pub extern "C" fn Java_com_bancoseguro_app_security_NativeCrypto_hashPassword(
 
 #[no_mangle]
 pub extern "C" fn Java_com_bancoseguro_app_security_NativeCrypto_generateKey(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _class: JClass,
 ) -> jbyteArray {
     let mut key = [0u8; 32];
@@ -144,7 +143,7 @@ pub extern "C" fn Java_com_bancoseguro_app_security_NativeCrypto_generateKey(
 
 #[no_mangle]
 pub extern "C" fn Java_com_bancoseguro_app_security_NativeCrypto_obfuscateTraffic(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _class: JClass,
     data: JByteArray,
 ) -> jbyteArray {
@@ -153,7 +152,7 @@ pub extern "C" fn Java_com_bancoseguro_app_security_NativeCrypto_obfuscateTraffi
         Err(_) => return JByteArray::default().into_raw(),
     };
 
-    let mut padding_size = rand::thread_rng().next_u32() % 64 + 16;
+    let padding_size = rand::thread_rng().next_u32() % 64 + 16;
     let mut padding = vec![0u8; padding_size as usize];
     rand::thread_rng().fill_bytes(&mut padding);
 
@@ -174,7 +173,7 @@ pub extern "C" fn Java_com_bancoseguro_app_security_NativeCrypto_obfuscateTraffi
 
 #[no_mangle]
 pub extern "C" fn Java_com_bancoseguro_app_security_NativeCrypto_deobfuscateTraffic(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _class: JClass,
     obfuscated: JByteArray,
 ) -> jbyteArray {

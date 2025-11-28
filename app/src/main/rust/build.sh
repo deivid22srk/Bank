@@ -18,6 +18,9 @@ if [ -z "$ANDROID_NDK_HOME" ]; then
     if [ -d "$ANDROID_HOME/ndk" ]; then
         export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/$(ls -1 $ANDROID_HOME/ndk | tail -n 1)"
     fi
+    if [ -d "$ANDROID_SDK_ROOT/ndk" ]; then
+        export ANDROID_NDK_HOME="$ANDROID_SDK_ROOT/ndk/$(ls -1 $ANDROID_SDK_ROOT/ndk | tail -n 1)"
+    fi
 fi
 
 if [ -z "$ANDROID_NDK_HOME" ]; then
@@ -25,10 +28,34 @@ if [ -z "$ANDROID_NDK_HOME" ]; then
     exit 1
 fi
 
-export CC_aarch64_linux_android="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android26-clang"
-export CC_armv7_linux_androideabi="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi26-clang"
-export CC_x86_64_linux_android="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android26-clang"
-export CC_i686_linux_android="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/i686-linux-android26-clang"
+echo "Using NDK at: $ANDROID_NDK_HOME"
+
+NDK_TOOLCHAIN="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64"
+
+if [ ! -d "$NDK_TOOLCHAIN" ]; then
+    NDK_TOOLCHAIN="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/darwin-x86_64"
+fi
+
+if [ ! -d "$NDK_TOOLCHAIN" ]; then
+    echo "Error: NDK toolchain not found"
+    exit 1
+fi
+
+export CC_aarch64_linux_android="$NDK_TOOLCHAIN/bin/aarch64-linux-android26-clang"
+export AR_aarch64_linux_android="$NDK_TOOLCHAIN/bin/llvm-ar"
+export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER="$NDK_TOOLCHAIN/bin/aarch64-linux-android26-clang"
+
+export CC_armv7_linux_androideabi="$NDK_TOOLCHAIN/bin/armv7a-linux-androideabi26-clang"
+export AR_armv7_linux_androideabi="$NDK_TOOLCHAIN/bin/llvm-ar"
+export CARGO_TARGET_ARMV7_LINUX_ANDROIDEABI_LINKER="$NDK_TOOLCHAIN/bin/armv7a-linux-androideabi26-clang"
+
+export CC_x86_64_linux_android="$NDK_TOOLCHAIN/bin/x86_64-linux-android26-clang"
+export AR_x86_64_linux_android="$NDK_TOOLCHAIN/bin/llvm-ar"
+export CARGO_TARGET_X86_64_LINUX_ANDROID_LINKER="$NDK_TOOLCHAIN/bin/x86_64-linux-android26-clang"
+
+export CC_i686_linux_android="$NDK_TOOLCHAIN/bin/i686-linux-android26-clang"
+export AR_i686_linux_android="$NDK_TOOLCHAIN/bin/llvm-ar"
+export CARGO_TARGET_I686_LINUX_ANDROID_LINKER="$NDK_TOOLCHAIN/bin/i686-linux-android26-clang"
 
 echo "Building for arm64-v8a..."
 cargo build --release --target aarch64-linux-android
