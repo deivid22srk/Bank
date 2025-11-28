@@ -2,7 +2,6 @@ package com.bancoapp.security
 
 import android.util.Log
 import com.bancoapp.BuildConfig
-import okhttp3.CertificatePinner
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import java.util.concurrent.TimeUnit
@@ -18,11 +17,6 @@ object NetworkSecurity {
     external fun obfuscateEndpoint(endpoint: String): String
     
     fun createSecureClient(): OkHttpClient {
-        val certificatePinner = CertificatePinner.Builder()
-            .add("*.firebaseio.com", "sha256/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
-            .add("*.googleapis.com", "sha256/BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=")
-            .build()
-        
         val loggingInterceptor = HttpLoggingInterceptor().apply {
             level = if (BuildConfig.DEBUG) {
                 HttpLoggingInterceptor.Level.BODY
@@ -32,15 +26,14 @@ object NetworkSecurity {
         }
         
         return OkHttpClient.Builder()
-            .certificatePinner(certificatePinner)
             .addInterceptor(loggingInterceptor)
             .addInterceptor { chain ->
                 val request = chain.request()
                 val url = request.url.toString()
                 
-                if (!validateConnection(url)) {
-                    Log.w(TAG, "Blocked insecure connection: $url")
-                    throw SecurityException("Insecure connection blocked")
+                if (!url.startsWith("https://")) {
+                    Log.w(TAG, "Blocked non-HTTPS connection: $url")
+                    throw SecurityException("Only HTTPS connections allowed")
                 }
                 
                 val newRequest = request.newBuilder()

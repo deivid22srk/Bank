@@ -8,10 +8,8 @@
     
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">supabase.co</domain>
-        <domain includeSubdomains="true">hiwnpzqqzxweszfoqvyi.supabase.co</domain>
-        <pin-set>
-            <pin digest="SHA-256">AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</pin>
-            <pin digest="SHA-256">BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=</pin>
-        </pin-set>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
     </domain-config>
 </network-security-config>
