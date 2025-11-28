@@ -132,6 +132,27 @@ class BancoRepository {
         fetchUserPeriodically(username).collect { emit(it) }
     }
     
+    suspend fun getUserByUsername(username: String): Result<User> {
+        return try {
+            val users = supabase.from("users")
+                .select {
+                    filter {
+                        eq("username", username)
+                    }
+                }
+                .decodeList<User>()
+            
+            if (users.isEmpty()) {
+                Result.failure(Exception("Usuário não encontrado"))
+            } else {
+                Result.success(users.first())
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error fetching user", e)
+            Result.failure(e)
+        }
+    }
+    
     private fun fetchUserPeriodically(username: String): Flow<User?> = flow {
         while (true) {
             try {
@@ -174,15 +195,15 @@ class BancoRepository {
                 return Result.failure(Exception("Saldo insuficiente"))
             }
             
-            val receiverExists = supabase.from("users")
-                .select(columns = Columns.list("username")) {
+            val receiverUser = supabase.from("users")
+                .select {
                     filter {
                         eq("username", toUsername)
                     }
                 }
-                .decodeList<User>()
+                .decodeSingleOrNull<User>()
             
-            if (receiverExists.isEmpty()) {
+            if (receiverUser == null) {
                 return Result.failure(Exception("Destinatário não encontrado"))
             }
             
@@ -195,7 +216,6 @@ class BancoRepository {
                 }
             }
             
-            val receiverUser = receiverExists.first()
             val receiverUpdates = mapOf(
                 "balance" to (receiverUser.balance + amount)
             )
