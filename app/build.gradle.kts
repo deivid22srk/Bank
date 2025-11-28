@@ -1,7 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("com.google.gms.google-services")
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.22"
 }
 
 android {
@@ -26,6 +26,9 @@ android {
                 arguments += "-DANDROID_STL=c++_shared"
             }
         }
+        
+        buildConfigField("String", "SUPABASE_URL", "\"https://hiwnpzqqzxweszfoqvyi.supabase.co\"")
+        buildConfigField("String", "SUPABASE_KEY", "\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhpd25wenFxenh3ZXN6Zm9xdnlpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQzNjI5NDMsImV4cCI6MjA3OTkzODk0M30.ZZRwv26e7PsgLZWmicMlUljT-2TDgYI_GezMw5Jhjro\"")
     }
 
     buildTypes {
@@ -87,18 +90,21 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
     
-    implementation(platform("com.google.firebase:firebase-bom:32.7.2"))
-    implementation("com.google.firebase:firebase-database-ktx")
-    implementation("com.google.firebase:firebase-auth-ktx")
-    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation(platform("io.github.jan-tennert.supabase:bom:2.5.4"))
+    implementation("io.github.jan-tennert.supabase:postgrest-kt")
+    implementation("io.github.jan-tennert.supabase:realtime-kt")
+    implementation("io.github.jan-tennert.supabase:storage-kt")
+    
+    implementation("io.ktor:ktor-client-android:2.3.11")
+    implementation("io.ktor:ktor-client-core:2.3.11")
+    implementation("io.ktor:ktor-utils:2.3.11")
+    
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     
-    implementation("com.google.code.gson:gson:2.10.1")
-    
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
     
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
     

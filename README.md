@@ -12,7 +12,7 @@ Um aplicativo de banco digital Android completo com moeda virtual baseada no Rea
   - Validação de dispositivo
 - 💸 **Transferências Fáceis**: Sistema simples e seguro de transferência entre usuários
 - 📊 **Histórico Completo**: Visualize todas suas transações
-- 🔥 **Firebase Backend**: Banco de dados em tempo real distribuído e gratuito
+- ⚡ **Supabase Backend**: Banco de dados PostgreSQL em tempo real, distribuído e gratuito
 - 🚀 **Jetpack Compose**: Interface moderna e responsiva
 
 ## 🛠️ Tecnologias
@@ -20,9 +20,11 @@ Um aplicativo de banco digital Android completo com moeda virtual baseada no Rea
 - **Kotlin** - Linguagem principal
 - **C++** - Camada nativa de segurança
 - **Jetpack Compose** - UI moderna
-- **Firebase Realtime Database** - Backend distribuído
+- **Supabase (PostgreSQL)** - Backend distribuído com realtime
 - **OkHttp** - Cliente HTTP seguro com SSL Pinning
 - **Material Design 3** - Design system
+- **Ktor** - Cliente HTTP para Supabase
+- **Kotlinx Serialization** - Serialização de dados
 
 ## 📱 Funcionalidades
 
@@ -40,35 +42,30 @@ Um aplicativo de banco digital Android completo com moeda virtual baseada no Rea
    - Transferência instantânea entre usuários
    - Validação de saldo
    - Confirmação visual
+   - Transações atômicas
 
 4. **Histórico**
    - Todas as transações enviadas e recebidas
    - Organização cronológica
    - Detalhes completos
+   - Atualização em tempo real
 
-## 🔧 Configuração
+## 🔧 Configuração Rápida
 
-### Pré-requisitos
+### 1. Configurar Supabase
 
-- Android Studio Arctic Fox ou superior
-- JDK 17
-- Android SDK 34
-- NDK para compilação C++
+Siga as instruções detalhadas em **[SUPABASE.md](SUPABASE.md)**
 
-### Firebase Setup
+**Resumo:**
+1. Acesse o SQL Editor do Supabase
+2. Execute o script `supabase_schema.sql`
+3. Verifique que as tabelas foram criadas
 
-1. Crie um projeto no [Firebase Console](https://console.firebase.google.com/)
-2. Adicione um app Android com o package name `com.bancoapp`
-3. Baixe o arquivo `google-services.json`
-4. Substitua o arquivo `app/google-services.json` pelo seu
-
-### Build
+### 2. Build do Projeto
 
 ```bash
 # Clone o repositório
 git clone <seu-repositorio>
-
-# Entre na pasta
 cd BancoApp
 
 # Compile o projeto
@@ -76,6 +73,10 @@ cd BancoApp
 
 # APK estará em: app/build/outputs/apk/debug/app-debug.apk
 ```
+
+### 3. Configuração Completa
+
+Para setup detalhado, consulte **[SETUP.md](SETUP.md)**
 
 ## 🏗️ Estrutura do Projeto
 
@@ -92,51 +93,111 @@ BancoApp/
 │   │   │   │   ├── data/         # Models e Repository
 │   │   │   │   ├── security/     # JNI Wrappers
 │   │   │   │   ├── ui/           # Compose UI
-│   │   │   │   │   ├── screens/
-│   │   │   │   │   └── theme/
 │   │   │   │   ├── viewmodel/    # ViewModels
 │   │   │   │   ├── BancoApplication.kt
 │   │   │   │   └── MainActivity.kt
 │   │   │   ├── res/              # Resources
 │   │   │   └── AndroidManifest.xml
 │   │   └── build.gradle.kts
-│   └── google-services.json
-├── .github/
-│   └── workflows/
-│       └── build.yml             # GitHub Actions
-├── build.gradle.kts
-├── settings.gradle.kts
-└── README.md
+├── supabase_schema.sql           # Schema SQL do banco
+├── .github/workflows/build.yml   # CI/CD
+├── README.md                      # Este arquivo
+├── SUPABASE.md                    # Guia do Supabase
+└── SETUP.md                       # Guia de instalação
 ```
 
 ## 🔒 Segurança
 
-### Camada Nativa C++
+### Camada de Rede
+- SSL Pinning em OkHttp
+- Validação de URLs em C++
+- Bloqueio de tráfego cleartext
+- Headers customizados
 
-- **Criptografia**: Algoritmo customizado de ofuscação
-- **Validação de Dispositivo**: Verifica se o dispositivo é seguro
-- **Proteção de Endpoint**: Valida todas as conexões de rede
+### Camada de Dados
+- Criptografia XOR + ofuscação em C++
+- Senhas nunca em texto plano
+- Sem backup automático
+- Transações atômicas no banco
 
-### Network Security
+### Camada de App
+- ProGuard configurado
+- Ofuscação de código
+- Validação de entrada
+- Row Level Security no Supabase
 
-- **SSL Pinning**: Previne ataques man-in-the-middle
-- **Network Security Config**: Bloqueia tráfego cleartext
-- **Headers Customizados**: Token de segurança em todas requisições
+## 📊 Banco de Dados
 
-### Dados
+### Tabelas
 
-- **Senhas Criptografadas**: Nunca armazenadas em texto plano
-- **Sem Backup**: Dados não são incluídos em backups do sistema
-- **Criptografia End-to-End**: Dados sensíveis sempre criptografados
+**users**
+- `id`, `username`, `password_hash`, `balance`, `created_at`, `updated_at`
+
+**transactions**
+- `id`, `from_user`, `to_user`, `amount`, `status`, `timestamp`
+
+### Função SQL Customizada
+
+`process_transfer(sender, receiver, amount)` - Transferência atômica com validações
+
+### Tempo Real
+
+- Atualização automática de saldos
+- Histórico sincronizado entre dispositivos
+- Notificações instantâneas de transações
 
 ## 🚀 GitHub Actions
 
 O projeto inclui CI/CD automático que:
+- Compila o app em cada push
+- Executa testes
+- Gera APK debug e release
+- Disponibiliza os artifacts para download
 
-1. Compila o app em cada push
-2. Executa testes
-3. Gera APK debug e release
-4. Disponibiliza os artifacts para download
+## 🎨 Paleta de Cores Pastel
+
+- **Roxo**: #E6CCFF / #CC99FF
+- **Azul**: #CCE5FF / #99CCFF  
+- **Rosa**: #FFD6E8 / #FFB3D9
+- **Verde**: #CCFFDD / #99FFBB
+- **Pêssego**: #FFE5CC
+- **Amarelo**: #FFF9CC
+
+## 🧪 Testes
+
+### Criar Usuários de Teste
+
+Via SQL Editor do Supabase:
+
+```sql
+INSERT INTO users (username, password_hash, balance) 
+VALUES 
+    ('usuario1', 'hash_teste_1', 1000.00),
+    ('usuario2', 'hash_teste_2', 1000.00);
+```
+
+### Testar Transferência
+
+```sql
+SELECT process_transfer('usuario1', 'usuario2', 100.00);
+```
+
+## 📦 Dependências Principais
+
+```kotlin
+// Supabase
+implementation("io.github.jan-tennert.supabase:postgrest-kt")
+implementation("io.github.jan-tennert.supabase:realtime-kt")
+
+// Ktor (HTTP Client)
+implementation("io.ktor:ktor-client-android")
+
+// Jetpack Compose
+implementation("androidx.compose.material3:material3")
+
+// Coroutines
+implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android")
+```
 
 ## 📝 Licença
 
@@ -150,14 +211,23 @@ Este projeto é livre para uso pessoal e entre amigos.
 4. Push para a branch (`git push origin feature/AmazingFeature`)
 5. Abra um Pull Request
 
-## 📧 Contato
+## 📧 Suporte
 
-Para dúvidas ou sugestões, abra uma issue no repositório.
+- 📖 Consulte [SUPABASE.md](SUPABASE.md) para configuração do banco
+- 🛠️ Consulte [SETUP.md](SETUP.md) para instalação detalhada
+- 🐛 Abra uma issue para reportar bugs
 
-## 🎨 Screenshots
+## 🎯 Roadmap
 
-_Adicione screenshots do seu app aqui quando estiver rodando!_
+- [ ] Autenticação com biometria
+- [ ] Exportar histórico em PDF
+- [ ] Gráficos de gastos
+- [ ] QR Code para transferências
+- [ ] Notificações push
+- [ ] Modo escuro
+- [ ] Suporte a múltiplas moedas
+- [ ] Backup e restauração
 
 ---
 
-Desenvolvido com ❤️ usando Kotlin, Jetpack Compose e C++
+Desenvolvido com ❤️ usando Kotlin + Jetpack Compose + Supabase + C++

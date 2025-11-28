@@ -8,16 +8,31 @@
     native <methods>;
 }
 
--keep class com.google.firebase.** { *; }
--keep class com.google.android.gms.** { *; }
+-keep class io.github.jan.supabase.** { *; }
+-keep class io.ktor.** { *; }
 
 -dontwarn okhttp3.**
 -dontwarn okio.**
 -keepnames class okhttp3.internal.publicsuffix.PublicSuffixDatabase
 
 -keepclasseswithmembers class * {
-    @com.google.gson.annotations.SerializedName <fields>;
+    @kotlinx.serialization.SerialName <fields>;
 }
 
 -keep,includedescriptorclasses class net.sqlcipher.** { *; }
 -keep,includedescriptorclasses interface net.sqlcipher.** { *; }
+
+-keepclassmembers class kotlinx.serialization.json.** {
+    *** Companion;
+}
+-keepclasseswithmembers class kotlinx.serialization.json.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+
+-keep,includedescriptorclasses class com.bancoapp.data.**$$serializer { *; }
+-keepclassmembers class com.bancoapp.data.** {
+    *** Companion;
+}
+-keepclasseswithmembers class com.bancoapp.data.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}

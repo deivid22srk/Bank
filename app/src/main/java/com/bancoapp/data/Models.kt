@@ -1,28 +1,56 @@
 package com.bancoapp.data
 
-import com.google.firebase.database.IgnoreExtraProperties
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
-@IgnoreExtraProperties
+@Serializable
 data class User(
-    val uid: String = "",
+    val id: String? = null,
     val username: String = "",
     val balance: Double = 1000.0,
-    val createdAt: Long = System.currentTimeMillis()
+    @SerialName("created_at")
+    val createdAt: String? = null,
+    @SerialName("updated_at")
+    val updatedAt: String? = null
 )
 
-@IgnoreExtraProperties
+@Serializable
+data class UserWithPassword(
+    val username: String,
+    @SerialName("password_hash")
+    val passwordHash: String,
+    val balance: Double = 1000.0
+)
+
+@Serializable
 data class Transaction(
-    val id: String = "",
+    val id: String? = null,
+    @SerialName("from_user")
     val fromUser: String = "",
+    @SerialName("to_user")
     val toUser: String = "",
     val amount: Double = 0.0,
-    val timestamp: Long = System.currentTimeMillis(),
+    val timestamp: String? = null,
     val status: String = "completed"
 )
 
+@Serializable
 data class TransferRequest(
-    val recipient: String,
-    val amount: Double
+    @SerialName("sender_username")
+    val senderUsername: String,
+    @SerialName("receiver_username")
+    val receiverUsername: String,
+    @SerialName("transfer_amount")
+    val transferAmount: Double
+)
+
+@Serializable
+data class TransferResponse(
+    val success: Boolean,
+    val error: String? = null,
+    @SerialName("transaction_id")
+    val transactionId: String? = null,
+    val message: String? = null
 )
 
 sealed class UiState<out T> {

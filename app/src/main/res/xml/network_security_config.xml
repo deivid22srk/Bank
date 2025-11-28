@@ -7,8 +7,8 @@
     </base-config>
     
     <domain-config cleartextTrafficPermitted="false">
-        <domain includeSubdomains="true">firebaseio.com</domain>
-        <domain includeSubdomains="true">googleapis.com</domain>
+        <domain includeSubdomains="true">supabase.co</domain>
+        <domain includeSubdomains="true">hiwnpzqqzxweszfoqvyi.supabase.co</domain>
         <pin-set>
             <pin digest="SHA-256">AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</pin>
             <pin digest="SHA-256">BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=</pin>
