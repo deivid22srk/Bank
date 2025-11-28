@@ -5,7 +5,6 @@ import com.bancoapp.BancoApplication
 import com.bancoapp.security.NativeCrypto
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
-import io.github.jan.supabase.postgrest.rpc
 import io.github.jan.supabase.realtime.PostgresAction
 import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.postgresChangeFlow
@@ -13,10 +12,6 @@ import io.github.jan.supabase.realtime.realtime
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 class BancoRepository {
     
@@ -166,28 +161,59 @@ class BancoRepository {
                 return Result.failure(Exception("Valor inválido"))
             }
             
-            val request = TransferRequest(
-                senderUsername = fromUsername,
-                receiverUsername = toUsername,
-                transferAmount = amount
-            )
+            val senderUser = supabase.from("users")
+                .select {
+                    filter {
+                        eq("username", fromUsername)
+                    }
+                }
+                .decodeSingle<User>()
             
-            val response = supabase.postgrest.rpc(
-                function = "process_transfer",
-                parameters = request
-            )
-            
-            val json = Json.parseToJsonElement(response.data).jsonObject
-            val success = json["success"]?.jsonPrimitive?.content?.toBoolean() ?: false
-            
-            if (success) {
-                Log.i(TAG, "Transfer completed: $fromUsername -> $toUsername: $amount")
-                Result.success(Unit)
-            } else {
-                val error = json["error"]?.jsonPrimitive?.content ?: "Erro desconhecido"
-                Log.e(TAG, "Transfer failed: $error")
-                Result.failure(Exception(error))
+            if (senderUser.balance < amount) {
+                return Result.failure(Exception("Saldo insuficiente"))
             }
+            
+            val receiverExists = supabase.from("users")
+                .select(columns = Columns.list("username")) {
+                    filter {
+                        eq("username", toUsername)
+                    }
+                }
+                .decodeList<User>()
+            
+            if (receiverExists.isEmpty()) {
+                return Result.failure(Exception("Destinatário não encontrado"))
+            }
+            
+            val updates = mapOf(
+                "balance" to (senderUser.balance - amount)
+            )
+            supabase.from("users").update(updates) {
+                filter {
+                    eq("username", fromUsername)
+                }
+            }
+            
+            val receiverUser = receiverExists.first()
+            val receiverUpdates = mapOf(
+                "balance" to (receiverUser.balance + amount)
+            )
+            supabase.from("users").update(receiverUpdates) {
+                filter {
+                    eq("username", toUsername)
+                }
+            }
+            
+            val newTransaction = mapOf(
+                "from_user" to fromUsername,
+                "to_user" to toUsername,
+                "amount" to amount,
+                "status" to "completed"
+            )
+            supabase.from("transactions").insert(newTransaction)
+            
+            Log.i(TAG, "Transfer completed: $fromUsername -> $toUsername: $amount")
+            Result.success(Unit)
         } catch (e: Exception) {
             Log.e(TAG, "Transfer failed", e)
             Result.failure(Exception("Erro ao transferir: ${e.message}"))
@@ -236,10 +262,9 @@ class BancoRepository {
     
     private suspend fun fetchTransactions(username: String): List<Transaction> {
         val allTransactions = supabase.from("transactions")
-            .select {
-                order("timestamp", ascending = false)
-            }
+            .select()
             .decodeList<Transaction>()
+            .sortedByDescending { it.timestamp ?: "" }
         
         return allTransactions.filter { transaction ->
             transaction.fromUser == username || transaction.toUser == username

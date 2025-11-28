@@ -172,7 +172,15 @@ fun TransactionItem(
     }
 }
 
-fun formatDate(timestamp: Long): String {
-    val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-    return sdf.format(Date(timestamp))
+fun formatDate(timestamp: String?): String {
+    if (timestamp == null) return ""
+    
+    return try {
+        val inputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+        val outputFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+        val date = inputFormat.parse(timestamp.substring(0, 19))
+        if (date != null) outputFormat.format(date) else timestamp
+    } catch (e: Exception) {
+        timestamp
+    }
 }
