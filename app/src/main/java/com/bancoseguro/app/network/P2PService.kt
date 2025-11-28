@@ -50,13 +50,13 @@ class P2PService : Service() {
         startForeground(NOTIFICATION_ID, createNotification())
         
         serviceScope.launch {
-            startP2PServer()
-            discoverPeers()
-            startPingLoop()
+            launch { startP2PServer() }
+            launch { discoverPeers() }
+            launch { startPingLoop() }
         }
     }
 
-    private fun startP2PServer() {
+    private suspend fun startP2PServer() {
         try {
             serverSocket = ServerSocket(DEFAULT_PORT)
             
@@ -167,7 +167,7 @@ class P2PService : Service() {
             )
             
             defaultPeerAddresses.forEach { address ->
-                launch {
+                serviceScope.launch {
                     try {
                         sendMessageToAddress(address, discoveryMessage)
                     } catch (e: Exception) {
@@ -190,7 +190,7 @@ class P2PService : Service() {
                 if (currentTime - peer.lastSeen > 60000) {
                     peersToRemove.add(peer.peerId)
                 } else {
-                    launch {
+                    serviceScope.launch {
                         try {
                             val pingMessage = P2PMessage.Ping(senderId = peerId)
                             sendMessageToPeer(peer, pingMessage)
@@ -248,7 +248,7 @@ class P2PService : Service() {
         )
         
         peers.values.forEach { peer ->
-            launch {
+            serviceScope.launch {
                 try {
                     sendMessageToPeer(peer, message)
                 } catch (e: Exception) {
