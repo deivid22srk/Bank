@@ -282,13 +282,16 @@ class BancoRepository {
     }
     
     private suspend fun fetchTransactions(username: String): List<Transaction> {
-        val allTransactions = supabase.from("transactions")
-            .select()
+        return supabase.from("transactions")
+            .select {
+                filter {
+                    or {
+                        eq("from_user", username)
+                        eq("to_user", username)
+                    }
+                }
+            }
             .decodeList<Transaction>()
             .sortedByDescending { it.timestamp ?: "" }
-        
-        return allTransactions.filter { transaction ->
-            transaction.fromUser == username || transaction.toUser == username
-        }
     }
 }
