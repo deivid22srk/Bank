@@ -3,6 +3,7 @@ package com.bancoapp.ui.theme
 import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
@@ -35,19 +36,47 @@ private val LightColorScheme = lightColorScheme(
     outline = TextLight
 )
 
+private val DarkColorScheme = darkColorScheme(
+    primary = DarkPastelPurple,
+    onPrimary = TextWhite,
+    primaryContainer = PastelPurple,
+    onPrimaryContainer = TextDark,
+    secondary = DarkPastelBlue,
+    onSecondary = TextWhite,
+    secondaryContainer = PastelBlue,
+    onSecondaryContainer = TextDark,
+    tertiary = DarkPastelPink,
+    onTertiary = TextWhite,
+    tertiaryContainer = PastelPink,
+    onTertiaryContainer = TextDark,
+    error = Color(0xFFB00020),
+    onError = TextWhite,
+    background = BackgroundDark,
+    onBackground = TextWhite,
+    surface = SurfaceDark,
+    onSurface = TextWhite,
+    surfaceVariant = Color(0xFF424242),
+    onSurfaceVariant = TextLight,
+    outline = TextLight
+)
+
 @Composable
 fun BancoAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
-    val colorScheme = LightColorScheme
+    val colorScheme = if (darkTheme) {
+        DarkColorScheme
+    } else {
+        LightColorScheme
+    }
 
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = android.graphics.Color.TRANSPARENT
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
     }
 
