@@ -1,5 +1,6 @@
 -- ============================================
 -- BANCO DIGITAL - SUPABASE DATABASE SCHEMA
+-- IMPORTANTE: Execute este script no Supabase SQL Editor
 -- ============================================
 
 -- 1. Criar tabela de usuários
@@ -19,9 +20,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     to_user TEXT NOT NULL,
     amount DECIMAL(15, 2) NOT NULL CHECK (amount > 0),
     status TEXT DEFAULT 'completed' CHECK (status IN ('pending', 'completed', 'failed')),
-    timestamp TIMESTAMPTZ DEFAULT NOW(),
-    FOREIGN KEY (from_user) REFERENCES users(username) ON DELETE CASCADE,
-    FOREIGN KEY (to_user) REFERENCES users(username) ON DELETE CASCADE
+    timestamp TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 3. Criar índices para melhor performance
@@ -40,121 +39,76 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- 5. Criar trigger para atualizar updated_at
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
 CREATE TRIGGER update_users_updated_at
     BEFORE UPDATE ON users
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- 6. Habilitar Row Level Security (RLS)
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
+-- 6. Desabilitar RLS temporariamente para facilitar desenvolvimento
+ALTER TABLE users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE transactions DISABLE ROW LEVEL SECURITY;
 
--- 7. Políticas de segurança para users
--- Usuários podem criar contas (inserir sem autenticação)
-CREATE POLICY "Permitir criação de usuários"
-    ON users FOR INSERT
-    WITH CHECK (true);
+-- 7. Limpar políticas antigas (se existirem)
+DROP POLICY IF EXISTS "Permitir criação de usuários" ON users;
+DROP POLICY IF EXISTS "Permitir leitura de usuários" ON users;
+DROP POLICY IF EXISTS "Permitir atualização de saldo" ON users;
+DROP POLICY IF EXISTS "Permitir criação de transações" ON transactions;
+DROP POLICY IF EXISTS "Permitir leitura de transações" ON transactions;
 
--- Usuários podem ver todos os outros usuários (para transferências)
-CREATE POLICY "Permitir leitura de usuários"
-    ON users FOR SELECT
-    USING (true);
+-- 8. IMPORTANTE: Habilitar Realtime nas tabelas
+-- ATENÇÃO: Após executar este script, você DEVE:
+-- 1. Ir em "Database" > "Replication" no Supabase Dashboard
+-- 2. Habilitar "Realtime" para as tabelas "users" e "transactions"
+-- 3. Ou execute o seguinte comando:
 
--- Usuários podem atualizar apenas seu próprio saldo
-CREATE POLICY "Permitir atualização de saldo"
-    ON users FOR UPDATE
-    USING (true)
-    WITH CHECK (true);
+ALTER PUBLICATION supabase_realtime ADD TABLE users;
+ALTER PUBLICATION supabase_realtime ADD TABLE transactions;
 
--- 8. Políticas de segurança para transactions
--- Qualquer um pode criar transações
-CREATE POLICY "Permitir criação de transações"
-    ON transactions FOR INSERT
-    WITH CHECK (true);
+-- ============================================
+-- CONFIGURAÇÃO ADICIONAL NECESSÁRIA
+-- ============================================
 
--- Usuários podem ver suas próprias transações
-CREATE POLICY "Permitir leitura de transações"
-    ON transactions FOR SELECT
-    USING (true);
+-- Para garantir que o Realtime funcione, execute também:
 
--- 9. Criar função para processar transferência atômica
-CREATE OR REPLACE FUNCTION process_transfer(
-    sender_username TEXT,
-    receiver_username TEXT,
-    transfer_amount DECIMAL
-)
-RETURNS JSON AS $$
-DECLARE
-    sender_balance DECIMAL;
-    transaction_id UUID;
-BEGIN
-    -- Verificar se os usuários existem
-    IF NOT EXISTS (SELECT 1 FROM users WHERE username = sender_username) THEN
-        RETURN json_build_object('success', false, 'error', 'Usuário remetente não encontrado');
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM users WHERE username = receiver_username) THEN
-        RETURN json_build_object('success', false, 'error', 'Usuário destinatário não encontrado');
-    END IF;
-    
-    -- Verificar saldo do remetente
-    SELECT balance INTO sender_balance FROM users WHERE username = sender_username FOR UPDATE;
-    
-    IF sender_balance < transfer_amount THEN
-        RETURN json_build_object('success', false, 'error', 'Saldo insuficiente');
-    END IF;
-    
-    -- Debitar do remetente
-    UPDATE users SET balance = balance - transfer_amount WHERE username = sender_username;
-    
-    -- Creditar ao destinatário
-    UPDATE users SET balance = balance + transfer_amount WHERE username = receiver_username;
-    
-    -- Criar registro da transação
-    INSERT INTO transactions (from_user, to_user, amount, status)
-    VALUES (sender_username, receiver_username, transfer_amount, 'completed')
-    RETURNING id INTO transaction_id;
-    
-    RETURN json_build_object(
-        'success', true,
-        'transaction_id', transaction_id,
-        'message', 'Transferência realizada com sucesso'
-    );
-    
-EXCEPTION WHEN OTHERS THEN
-    RETURN json_build_object('success', false, 'error', SQLERRM);
-END;
-$$ LANGUAGE plpgsql;
+-- Verificar se as tabelas estão publicadas
+SELECT schemaname, tablename 
+FROM pg_publication_tables 
+WHERE pubname = 'supabase_realtime';
 
--- 10. Criar view para histórico de transações por usuário
-CREATE OR REPLACE VIEW user_transactions AS
-SELECT 
-    t.id,
-    t.from_user,
-    t.to_user,
-    t.amount,
-    t.status,
-    t.timestamp,
-    CASE 
-        WHEN t.from_user = u.username THEN 'sent'
-        ELSE 'received'
-    END as transaction_type
-FROM transactions t
-CROSS JOIN users u;
+-- Se as tabelas não aparecerem, tente recriar a publicação:
+-- DROP PUBLICATION IF EXISTS supabase_realtime;
+-- CREATE PUBLICATION supabase_realtime FOR TABLE users, transactions;
 
--- 11. Inserir usuários de teste (OPCIONAL - remover em produção)
--- INSERT INTO users (username, password_hash, balance) 
--- VALUES 
---     ('usuario1', 'hash_senha_1', 1000.00),
---     ('usuario2', 'hash_senha_2', 1000.00);
+-- ============================================
+-- INSTRUÇÕES DE USO
+-- ============================================
+
+/*
+PASSO A PASSO PARA CONFIGURAR:
+
+1. Abra o Supabase Dashboard (https://supabase.com/dashboard)
+2. Selecione seu projeto
+3. Vá em "SQL Editor" no menu lateral
+4. Cole este script completo
+5. Clique em "Run" para executar
+6. Vá em "Database" > "Replication" 
+7. Encontre as tabelas "users" e "transactions"
+8. Clique no botão de toggle para habilitar "Realtime" em ambas
+9. Pronto! O histórico de transações deve funcionar agora
+
+VERIFICAÇÃO:
+- Execute: SELECT * FROM users;
+- Execute: SELECT * FROM transactions;
+- Ambas as tabelas devem aparecer vazias (ou com dados de teste)
+
+TESTE:
+- Crie uma conta no app
+- Faça uma transferência
+- Verifique se a transação aparece: SELECT * FROM transactions;
+- O histórico deve aparecer no app automaticamente
+*/
 
 -- ============================================
 -- FIM DO SCHEMA
 -- ============================================
-
--- Para visualizar as tabelas criadas, execute:
--- SELECT * FROM users;
--- SELECT * FROM transactions;
-
--- Para testar a função de transferência:
--- SELECT process_transfer('usuario1', 'usuario2', 100.00);

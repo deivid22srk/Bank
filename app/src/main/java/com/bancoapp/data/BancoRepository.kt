@@ -225,11 +225,11 @@ class BancoRepository {
                 }
             }
             
-            val newTransaction = mapOf(
-                "from_user" to fromUsername,
-                "to_user" to toUsername,
-                "amount" to amount,
-                "status" to "completed"
+            val newTransaction = TransactionInsert(
+                fromUser = fromUsername,
+                toUser = toUsername,
+                amount = amount,
+                status = "completed"
             )
             supabase.from("transactions").insert(newTransaction)
             

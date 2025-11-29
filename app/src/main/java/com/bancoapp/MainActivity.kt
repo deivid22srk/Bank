@@ -90,6 +90,9 @@ fun BancoApp() {
                 onNavigateToHistory = {
                     navController.navigate("history")
                 },
+                onNavigateToQRScanner = {
+                    navController.navigate("qr_scanner")
+                },
                 onLogout = {
                     authViewModel.logout()
                     navController.navigate("login") {
@@ -113,6 +116,32 @@ fun BancoApp() {
             HistoryScreen(
                 onNavigateBack = {
                     navController.popBackStack()
+                },
+                authViewModel = authViewModel
+            )
+        }
+        
+        composable("qr_scanner") {
+            QRCodeScannerScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onQRCodeScanned = { username ->
+                    navController.navigate("qr_payment/$username") {
+                        popUpTo("home")
+                    }
+                }
+            )
+        }
+        
+        composable("qr_payment/{username}") { backStackEntry ->
+            val username = backStackEntry.arguments?.getString("username") ?: ""
+            QRPaymentScreen(
+                recipientUsername = username,
+                onNavigateBack = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
                 },
                 authViewModel = authViewModel
             )

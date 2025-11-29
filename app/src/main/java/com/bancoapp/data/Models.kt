@@ -41,6 +41,16 @@ data class Transaction(
 )
 
 @Serializable
+data class TransactionInsert(
+    @SerialName("from_user")
+    val fromUser: String,
+    @SerialName("to_user")
+    val toUser: String,
+    val amount: Double,
+    val status: String = "completed"
+)
+
+@Serializable
 data class TransferRequest(
     @SerialName("sender_username")
     val senderUsername: String,
